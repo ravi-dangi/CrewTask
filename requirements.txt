@@ -1,0 +1,28 @@
+# Core Dependencies
+crewai
+crewai-tools
+streamlit
+
+# LLM & Embeddings
+openai
+langchain
+langchain-community
+langchain-openai
+langchain-text-splitters
+
+# Vector Store
+faiss-cpu
+chromadb
+
+# PDF Processing
+pypdf
+pdfplumber
+
+# Web Search
+google-search-results
+
+# Weather API
+requests
+
+# Utilities
+python-dotenv
