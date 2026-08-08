@@ -1,3 +1,7 @@
+from ._compat import ensure_pkg_resources
+
+ensure_pkg_resources()
+
 from crewai import Agent, LLM
 from .tools import get_weather, search_web, query_pdf
 import os

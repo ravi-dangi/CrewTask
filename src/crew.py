@@ -1,3 +1,7 @@
+from ._compat import ensure_pkg_resources
+
+ensure_pkg_resources()
+
 from crewai import Crew, Task, Process
 from .agents import AgentFactory
 from .direct_search import direct_web_search

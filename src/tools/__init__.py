@@ -1,3 +1,7 @@
+from .._compat import ensure_pkg_resources
+
+ensure_pkg_resources()
+
 from .weather_tool import get_weather
 from .web_search_tool import search_web
 from .pdf_rag_tool import query_pdf, load_pdf, clear_pdf, is_pdf_loaded

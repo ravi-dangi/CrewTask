@@ -1,6 +1,11 @@
 import streamlit as st
 import os
 from dotenv import load_dotenv
+
+# crewai 0.28.x needs pkg_resources; Streamlit Cloud may omit setuptools
+from src._compat import ensure_pkg_resources
+ensure_pkg_resources()
+
 from src.crew import RAGCrew
 from src.tools.pdf_rag_tool import load_pdf, clear_pdf, is_pdf_loaded
 
