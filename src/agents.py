@@ -4,14 +4,15 @@ import os
 
 
 def get_llm():
-    """Initialize and return the LLM instance configured for OpenRouter."""
+    """Initialize and return the LLM instance configured for OpenRouter with tool calling enforced."""
     api_key = os.getenv("OPENROUTER_API_KEY")
     model = os.getenv("OPENROUTER_MODEL", "openai/gpt-4-turbo-preview")
     
     return LLM(
         model=f"openrouter/{model}",
         api_key=api_key,
-        base_url="https://openrouter.ai/api/v1"
+        base_url="https://openrouter.ai/api/v1",
+        temperature=0.0  # Lower temperature for more deterministic tool usage
     )
 
 
@@ -71,11 +72,14 @@ class AgentFactory:
         return Agent(
             role="Web Research Specialist",
             goal=(
-                "Search the web for current information, facts, and general knowledge. "
+                "Search the web for current, real-time information using the web search tool. "
+                "ALWAYS use the search_web tool for every query - never rely on your training data. "
                 "Provide accurate answers with credible sources and links."
             ),
             backstory=(
                 "You are a skilled researcher with expertise in finding reliable information online. "
+                "You MUST use the web search tool for EVERY query to get current information. "
+                "You never answer questions from memory - you always search first. "
                 "You know how to formulate effective search queries, evaluate source credibility, "
                 "and synthesize information from multiple sources. You always provide source links "
                 "so users can verify the information themselves."

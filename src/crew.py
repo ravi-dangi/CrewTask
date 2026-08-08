@@ -1,5 +1,6 @@
 from crewai import Crew, Task, Process
 from .agents import AgentFactory
+from .direct_search import direct_web_search
 
 
 class RAGCrew:
@@ -30,7 +31,7 @@ class RAGCrew:
         
         elif task_type == "web":
             return Task(
-                description=f"Search the web and answer this question: {question}",
+                description=f"Use the web search tool to find current information and answer this question: {question}. You MUST use the search_web tool - do not answer from memory.",
                 agent=self.agents["web_search_agent"],
                 expected_output="Comprehensive answer with information from credible sources and source links."
             )
@@ -187,7 +188,7 @@ class RAGCrew:
                 # Default to web search for general questions
                 task_type = "web"
                 agent = self.agents["web_search_agent"]
-                description = f"Search the web and answer: {question}"
+                description = f"Use the search_web tool to find current information about: {question}. You MUST call the search_web tool first before answering."
                 expected_output = "Comprehensive answer with sources from the web."
             
             # Create task
