@@ -28,3 +28,6 @@ requests==2.31.0
 
 # Utilities
 python-dotenv==1.0.1
+
+# Pin transitive deps (instructor requires rich>=13.7,<15)
+rich==14.3.4
