@@ -3,21 +3,28 @@ from ._compat import ensure_pkg_resources
 ensure_pkg_resources()
 
 import os
+import warnings
 from crewai import Agent
 from langchain_openai import ChatOpenAI
 
 from .tools import get_weather, search_web, query_pdf
+
+# pydantic v2 exposes a v1 compatibility layer at pydantic.v1
+try:
+    from pydantic.v1.error_wrappers import ValidationError as PydanticV1ValidationError
+except Exception:
+    PydanticV1ValidationError = None
 
 
 def get_llm() -> ChatOpenAI:
     """OpenRouter-backed chat model for CrewAI 0.28.x (uses LangChain ChatOpenAI).
 
     Notes
-    - Some versions of `langchain` / `langchain-openai` expect the model argument
-      to be called `model_name` instead of `model`. Passing the wrong keyword
-      causes a pydantic validation error during instantiation (seen in the app
-      logs). This helper tries the canonical `model_name` first and falls back
-      to `model` if necessary.
+    - Different versions of the langchain/langchain-openai wrappers expect different
+      keyword names for the model parameter: some expect `model_name`, others `model`.
+      Passing the wrong keyword can raise a pydantic ValidationError or a TypeError.
+      This helper tries `model_name` first, and falls back to `model` if the first
+      attempt fails.
     - Ensure an API key is provided via `OPENROUTER_API_KEY` (preferred) or
       `OPENAI_API_KEY` as a fallback.
     """
@@ -25,26 +32,53 @@ def get_llm() -> ChatOpenAI:
     model_name = os.getenv("OPENROUTER_MODEL", "openai/gpt-4o-mini")
 
     if not api_key:
-        # Fail fast with a clear error so Streamlit shows a helpful message
+        # Fail fast with a clear error so Streamlit surfaces a helpful message
         raise RuntimeError(
             "Missing API key: set OPENROUTER_API_KEY (preferred) or OPENAI_API_KEY"
         )
 
-    # Try the most common/modern parameter name first (model_name).
+    # Common kwargs used for both instantiations
+    common_kwargs = dict(
+        openai_api_key=api_key,
+        openai_api_base="https://openrouter.ai/api/v1",
+        temperature=0.0,
+    )
+
+    first_exc = None
+
+    # Try the modern/most-common parameter name first
     try:
         return ChatOpenAI(
             model_name=model_name,
-            openai_api_key=api_key,
-            openai_api_base="https://openrouter.ai/api/v1",
-            temperature=0.0,
+            **common_kwargs,
         )
-    except TypeError:
-        # Some older/alternate wrappers expect `model` instead of `model_name`.
+    except Exception as e:
+        first_exc = e
+        # If it's a pydantic v1 ValidationError or a TypeError, we'll try the alternative
+        should_fallback = (
+            isinstance(e, TypeError)
+            or (PydanticV1ValidationError is not None and isinstance(e, PydanticV1ValidationError))
+        )
+        if not should_fallback:
+            # Unknown error type — re-raise to avoid masking unexpected issues.
+            raise
+
+    # Fallback: try the older/alternate parameter name
+    try:
+        warnings.warn(
+            "ChatOpenAI(model_name=...) failed; retrying with ChatOpenAI(model=...) as a fallback.",
+            UserWarning,
+        )
         return ChatOpenAI(
             model=model_name,
-            openai_api_key=api_key,
-            openai_api_base="https://openrouter.ai/api/v1",
-            temperature=0.0,
+            **common_kwargs,
+        )
+    except Exception as e2:
+        # Both attempts failed — raise a helpful error including both exception messages.
+        raise RuntimeError(
+            "Failed to instantiate ChatOpenAI with both 'model_name' and 'model' parameters. "
+            f"First error: {type(first_exc).__name__}: {str(first_exc)}; "
+            f"Second error: {type(e2).__name__}: {str(e2)}"
         )
 
 
