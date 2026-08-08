@@ -11,10 +11,48 @@ class RAGCrew:
     """Orchestrates the multi-agent RAG system."""
     
     def __init__(self):
-        """Initialize the crew with all agents."""
-        self.agents = AgentFactory.create_all_agents()
+        """Initialize the crew without instantiating agents.
+
+        Agent creation is deferred until they're actually needed to avoid
+        failing the whole app at import/startup time when LLM configuration
+        (API keys or incompatible library versions) may be missing. This
+        prevents pydantic validation errors from crashing Streamlit during
+        session initialization.
+        """
+        # Agents will be created lazily by ensure_agents(). Use None to signal
+        # "not yet created" so we can distinguish from an empty dict.
+        self.agents = None
         self.crew = None
-    
+        self._agent_init_error = None
+
+    def ensure_agents(self):
+        """Create agents on first use and remember any initialization error.
+
+        This method is idempotent and safe to call from all public APIs in
+        this class. If agent creation fails, we capture the exception and
+        surface a helpful RuntimeError when the user tries to use the crew.
+        """
+        if self.agents is not None:
+            return
+
+        try:
+            self.agents = AgentFactory.create_all_agents()
+        except Exception as e:
+            # Remember the original exception for diagnostics, but don't
+            # re-raise here so creating RAGCrew() stays safe at import time.
+            self._agent_init_error = e
+            self.agents = {}
+
+    def _raise_agent_init_error(self):
+        if self._agent_init_error is not None:
+            # Provide a clearer, actionable message without leaking secrets.
+            raise RuntimeError(
+                "Failed to initialize LLM-backed agents. Check that your LLM "
+                "API key environment variables (OPENROUTER_API_KEY or OPENAI_API_KEY) "
+                "are set and that the installed langchain/langchain-openai versions "
+                "are compatible. See application logs for the original error."
+            ) from self._agent_init_error
+
     def create_task(self, question: str, task_type: str = "auto") -> Task:
         """
         Create a task based on the question and type.
@@ -26,6 +64,10 @@ class RAGCrew:
         Returns:
             Task object
         """
+        # Ensure agents exist before referencing them
+        self.ensure_agents()
+        self._raise_agent_init_error()
+
         if task_type == "weather":
             return Task(
                 description=f"Answer this weather-related question: {question}",
@@ -74,6 +116,10 @@ class RAGCrew:
             Answer from the crew
         """
         try:
+            # Ensure agents are available
+            self.ensure_agents()
+            self._raise_agent_init_error()
+
             # Create task based on question type
             task = self.create_task(question, task_type)
             
@@ -124,6 +170,10 @@ class RAGCrew:
             Answer from the crew
         """
         try:
+            # Ensure agents are available
+            self.ensure_agents()
+            self._raise_agent_init_error()
+
             # Create task based on question type
             task = self.create_task(question, task_type)
             
@@ -172,6 +222,10 @@ class RAGCrew:
             Answer from the appropriate agent
         """
         try:
+            # Ensure agents are available
+            self.ensure_agents()
+            self._raise_agent_init_error()
+
             # Simple keyword-based routing
             question_lower = question.lower()
             
