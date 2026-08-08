@@ -2,6 +2,17 @@ import os
 import requests
 from crewai.tools import tool
 
+# Try to get environment variable with fallback
+def get_env_var(key: str) -> str:
+    """Get environment variable with Streamlit secrets fallback."""
+    try:
+        import streamlit as st
+        if hasattr(st, 'secrets'):
+            return st.secrets.get(key, os.getenv(key))
+    except:
+        pass
+    return os.getenv(key)
+
 
 @tool("Web Search Tool")
 def search_web(query: str) -> str:
@@ -14,7 +25,7 @@ def search_web(query: str) -> str:
     Returns:
         Formatted search results with sources
     """
-    api_key = os.getenv("SERPER_API_KEY")  # Using SERPER_API_KEY env var for SerpApi key
+    api_key = get_env_var("SERPER_API_KEY")  # Using SERPER_API_KEY env var for SerpApi key
     
     if not api_key:
         return "Error: API key not found. Please configure SERPER_API_KEY in .env file with your SerpApi key."

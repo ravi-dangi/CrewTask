@@ -1,28 +1,30 @@
 # Core Dependencies
-crewai
-crewai-tools
-streamlit
+crewai==0.28.8
+crewai-tools==0.2.6
+streamlit==1.31.0
 
 # LLM & Embeddings
-openai
-langchain
-langchain-community
-langchain-openai
-langchain-text-splitters
+openai==1.12.0
+langchain==0.1.10
+langchain-community==0.0.24
+langchain-openai==0.0.6
+langchain-text-splitters==0.0.1
 
 # Vector Store
-faiss-cpu
-chromadb
+faiss-cpu==1.7.4
+chromadb==0.4.22
+pydantic==1.10.13
 
 # PDF Processing
-pypdf
-pdfplumber
+pypdf==3.17.4
+pypdf2==3.0.1
+pdfplumber==0.10.3
 
 # Web Search
-google-search-results
+google-search-results==2.4.2
 
 # Weather API
-requests
+requests==2.31.0
 
 # Utilities
-python-dotenv
+python-dotenv==1.0.1

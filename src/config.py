@@ -5,21 +5,50 @@ from typing import Optional
 # Load environment variables
 load_dotenv()
 
+# Try to import streamlit for cloud deployment
+try:
+    import streamlit as st
+    IN_STREAMLIT = True
+except ImportError:
+    IN_STREAMLIT = False
+
+
+def get_env_var(key: str, default: Optional[str] = None) -> Optional[str]:
+    """
+    Get environment variable from .env file or Streamlit secrets.
+    
+    Args:
+        key: Environment variable key
+        default: Default value if not found
+        
+    Returns:
+        Environment variable value or default
+    """
+    # Try Streamlit secrets first (for cloud deployment)
+    if IN_STREAMLIT and hasattr(st, 'secrets'):
+        try:
+            return st.secrets.get(key, os.getenv(key, default))
+        except:
+            pass
+    
+    # Fall back to environment variables
+    return os.getenv(key, default)
+
 
 class Config:
     """Configuration class for managing environment variables and settings."""
     
     # API Keys
-    OPENROUTER_API_KEY: Optional[str] = os.getenv("OPENROUTER_API_KEY")
-    SERPER_API_KEY: Optional[str] = os.getenv("SERPER_API_KEY")
-    OPENWEATHER_API_KEY: Optional[str] = os.getenv("OPENWEATHER_API_KEY")
+    OPENROUTER_API_KEY: Optional[str] = get_env_var("OPENROUTER_API_KEY")
+    SERPER_API_KEY: Optional[str] = get_env_var("SERPER_API_KEY")
+    OPENWEATHER_API_KEY: Optional[str] = get_env_var("OPENWEATHER_API_KEY")
     
     # Model Configuration
-    OPENROUTER_MODEL: str = os.getenv("OPENROUTER_MODEL", "openai/gpt-4-turbo-preview")
+    OPENROUTER_MODEL: str = get_env_var("OPENROUTER_MODEL", "openai/gpt-4o-mini")
     OPENROUTER_BASE_URL: str = "https://openrouter.ai/api/v1"
     
     # Vector Store Configuration
-    VECTOR_STORE_PATH: str = os.getenv("VECTOR_STORE_PATH", "./vector_store")
+    VECTOR_STORE_PATH: str = get_env_var("VECTOR_STORE_PATH", "./vector_store")
     
     # PDF Configuration
     UPLOADS_DIR: str = "./uploads"
