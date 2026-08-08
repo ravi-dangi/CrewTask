@@ -1,6 +1,6 @@
 import os
 import requests
-from crewai.tools import tool
+from langchain.tools import tool
 
 
 @tool("Weather Information Tool")

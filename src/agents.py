@@ -2,21 +2,23 @@ from ._compat import ensure_pkg_resources
 
 ensure_pkg_resources()
 
-from crewai import Agent, LLM
-from .tools import get_weather, search_web, query_pdf
 import os
+from crewai import Agent
+from langchain_openai import ChatOpenAI
+
+from .tools import get_weather, search_web, query_pdf
 
 
-def get_llm():
-    """Initialize and return the LLM instance configured for OpenRouter with tool calling enforced."""
+def get_llm() -> ChatOpenAI:
+    """OpenRouter-backed chat model for CrewAI 0.28.x (uses LangChain ChatOpenAI)."""
     api_key = os.getenv("OPENROUTER_API_KEY")
-    model = os.getenv("OPENROUTER_MODEL", "openai/gpt-4-turbo-preview")
-    
-    return LLM(
-        model=f"openrouter/{model}",
-        api_key=api_key,
-        base_url="https://openrouter.ai/api/v1",
-        temperature=0.0  # Lower temperature for more deterministic tool usage
+    model = os.getenv("OPENROUTER_MODEL", "openai/gpt-4o-mini")
+
+    return ChatOpenAI(
+        model=model,
+        openai_api_key=api_key,
+        openai_api_base="https://openrouter.ai/api/v1",
+        temperature=0.0,
     )
 
 

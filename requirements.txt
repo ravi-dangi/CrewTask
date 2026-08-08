@@ -13,7 +13,7 @@ tiktoken==0.5.2
 
 # Vector Store
 # App uses FAISS; chromadb is required transitively by crewai/embedchain
-faiss-cpu==1.7.4
+faiss-cpu==1.8.0.post1
 chromadb==0.4.22
 pydantic==2.6.1
 

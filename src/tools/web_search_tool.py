@@ -1,6 +1,6 @@
 import os
 import requests
-from crewai.tools import tool
+from langchain.tools import tool
 
 # Try to get environment variable with fallback
 def get_env_var(key: str) -> str:

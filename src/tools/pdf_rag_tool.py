@@ -1,7 +1,7 @@
 import os
 import pickle
 from typing import Optional
-from crewai.tools import tool
+from langchain.tools import tool
 
 import faiss
 from langchain_text_splitters import RecursiveCharacterTextSplitter
