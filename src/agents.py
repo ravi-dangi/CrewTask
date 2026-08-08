@@ -10,16 +10,42 @@ from .tools import get_weather, search_web, query_pdf
 
 
 def get_llm() -> ChatOpenAI:
-    """OpenRouter-backed chat model for CrewAI 0.28.x (uses LangChain ChatOpenAI)."""
-    api_key = os.getenv("OPENROUTER_API_KEY")
-    model = os.getenv("OPENROUTER_MODEL", "openai/gpt-4o-mini")
+    """OpenRouter-backed chat model for CrewAI 0.28.x (uses LangChain ChatOpenAI).
 
-    return ChatOpenAI(
-        model=model,
-        openai_api_key=api_key,
-        openai_api_base="https://openrouter.ai/api/v1",
-        temperature=0.0,
-    )
+    Notes
+    - Some versions of `langchain` / `langchain-openai` expect the model argument
+      to be called `model_name` instead of `model`. Passing the wrong keyword
+      causes a pydantic validation error during instantiation (seen in the app
+      logs). This helper tries the canonical `model_name` first and falls back
+      to `model` if necessary.
+    - Ensure an API key is provided via `OPENROUTER_API_KEY` (preferred) or
+      `OPENAI_API_KEY` as a fallback.
+    """
+    api_key = os.getenv("OPENROUTER_API_KEY") or os.getenv("OPENAI_API_KEY")
+    model_name = os.getenv("OPENROUTER_MODEL", "openai/gpt-4o-mini")
+
+    if not api_key:
+        # Fail fast with a clear error so Streamlit shows a helpful message
+        raise RuntimeError(
+            "Missing API key: set OPENROUTER_API_KEY (preferred) or OPENAI_API_KEY"
+        )
+
+    # Try the most common/modern parameter name first (model_name).
+    try:
+        return ChatOpenAI(
+            model_name=model_name,
+            openai_api_key=api_key,
+            openai_api_base="https://openrouter.ai/api/v1",
+            temperature=0.0,
+        )
+    except TypeError:
+        # Some older/alternate wrappers expect `model` instead of `model_name`.
+        return ChatOpenAI(
+            model=model_name,
+            openai_api_key=api_key,
+            openai_api_base="https://openrouter.ai/api/v1",
+            temperature=0.0,
+        )
 
 
 class AgentFactory:
